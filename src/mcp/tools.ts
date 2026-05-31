@@ -3,7 +3,7 @@
 import { z } from 'zod'
 import { resolveKeyFile, resolveSite } from '../lib/config.js'
 import { buildEnvelope, type Envelope } from '../lib/envelope.js'
-import { loadKeyFile } from '../core/auth.js'
+import { loadCredential, credentialLabel } from '../core/auth.js'
 import { makeClient, type GscClient } from '../core/client.js'
 import { ENV_PREFIX } from '../lib/constants.js'
 import { parseFilters, resolveDateRange, flattenRows, normalizeSiteUrl } from '../lib/gsc.js'
@@ -26,7 +26,7 @@ function clientOrError(): GscClient | Envelope {
     })
   }
   try {
-    return makeClient(loadKeyFile(keyFile))
+    return makeClient(loadCredential(keyFile))
   } catch (e) {
     return buildEnvelope({ status: 'error', error: { code: 'AUTH_INVALID', message: e instanceof Error ? e.message : String(e) } })
   }
@@ -163,8 +163,8 @@ export const whoamiTool: ToolDef<Record<string, never>> = {
   async handler() {
     const keyFile = resolveKeyFile({})
     let email: string | null = null
-    if (keyFile) { try { email = loadKeyFile(keyFile).client_email } catch { /* ignore */ } }
-    return buildEnvelope({ status: 'success', command: 'whoami', data: { authenticated: Boolean(email), service_account: email, default_site: resolveSite({}) } })
+    if (keyFile) { try { email = credentialLabel(loadCredential(keyFile)) } catch { /* ignore */ } }
+    return buildEnvelope({ status: 'success', command: 'whoami', data: { authenticated: Boolean(email), identity: email, default_site: resolveSite({}) } })
   },
 }
 

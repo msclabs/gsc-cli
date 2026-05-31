@@ -6,7 +6,7 @@ import type { GlobalOpts } from '../lib/config.js'
 import { outputError, ExitCode } from '../lib/output.js'
 import { isInteractive } from '../lib/tty.js'
 import { detectAgent } from '../lib/agent.js'
-import { loadKeyFile, AuthError } from '../core/auth.js'
+import { loadCredential, credentialLabel, AuthError } from '../core/auth.js'
 import { makeClient } from '../core/client.js'
 import { ENV_PREFIX } from '../lib/constants.js'
 
@@ -50,10 +50,10 @@ export function makeLoginCommand(globalOpts: () => GlobalOpts): Command {
 
       keyFile = path.resolve(keyFile.trim())
 
-      // Validate the key file parses and is a service account.
+      // Validate the credential file parses (service account or authorized_user).
       let email: string
       try {
-        email = loadKeyFile(keyFile).client_email
+        email = credentialLabel(loadCredential(keyFile))
       } catch (e) {
         outputError({
           code: e instanceof AuthError ? (e.code as 'AUTH_INVALID') : 'AUTH_INVALID',
@@ -66,7 +66,7 @@ export function makeLoginCommand(globalOpts: () => GlobalOpts): Command {
       let verifiedSites: number | null = null
       if (opts.verify !== false) {
         try {
-          const client = makeClient(loadKeyFile(keyFile), { timeoutMs: g.timeout })
+          const client = makeClient(loadCredential(keyFile), { timeoutMs: g.timeout })
           const sites = await client.listSites()
           verifiedSites = sites.length
         } catch (e) {
@@ -85,12 +85,12 @@ export function makeLoginCommand(globalOpts: () => GlobalOpts): Command {
 
       process.stderr.write(
         pc.green('✓') + ` Configured. Profile: ${profileName}\n` +
-        `  Service account: ${email}\n` +
+        `  Identity: ${email}\n` +
         (opts.defaultSite ? `  Default site:    ${opts.defaultSite}\n` : '') +
         (verifiedSites !== null ? pc.dim(`  Verified: ${verifiedSites} propertie(s) visible to this account.\n`) : ''),
       )
       if (verifiedSites === 0) {
-        process.stderr.write(pc.yellow('  Note: 0 properties visible — add ') + pc.bold(email) + pc.yellow(' as a user in Search Console.\n'))
+        process.stderr.write(pc.yellow('  Note: 0 properties visible — this identity has no Search Console access yet.\n'))
       }
     })
 }

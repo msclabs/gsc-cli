@@ -1,7 +1,7 @@
 // Shared command plumbing: resolve service account → client, resolve site,
 // and map API/auth errors to output + typed exit codes.
 import { resolveKeyFile, resolveSite, type GlobalOpts } from './config.js'
-import { loadKeyFile, AuthError, type ServiceAccountKey } from '../core/auth.js'
+import { loadCredential, AuthError, type Credential } from '../core/auth.js'
 import { makeClient, ApiError, type GscClient } from '../core/client.js'
 import { outputError, ExitCode, type ErrorCode } from './output.js'
 import { normalizeSiteUrl } from './gsc.js'
@@ -27,18 +27,18 @@ export function exitForCode(code: string): number {
   }
 }
 
-export function requireClient(opts: GlobalOpts): { client: GscClient; key: ServiceAccountKey } {
+export function requireClient(opts: GlobalOpts): { client: GscClient; key: Credential } {
   const keyFile = resolveKeyFile(opts)
   if (!keyFile) {
     outputError({
       code: 'AUTH_MISSING',
-      message: 'No service-account key configured.',
+      message: 'No credentials configured.',
       hint: `Run \`gsc login --key-file <path>\`, or set ${ENV_PREFIX}_KEY_FILE / GOOGLE_APPLICATION_CREDENTIALS.`,
     }, opts)
     process.exit(ExitCode.AUTH)
   }
   try {
-    const key = loadKeyFile(keyFile)
+    const key = loadCredential(keyFile)
     const client = makeClient(key, { timeoutMs: opts.timeout })
     return { client, key }
   } catch (e) {

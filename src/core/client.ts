@@ -4,7 +4,7 @@
 // property-level permission at call time.
 import { USER_AGENT, HOSTS, DEFAULT_SCOPES } from '../lib/constants.js'
 import { agentUserAgentSuffix } from '../lib/agent.js'
-import { getAccessToken, type ServiceAccountKey } from './auth.js'
+import { getAccessToken, type Credential } from './auth.js'
 import type {
   SitesListResult, SiteEntry, SearchAnalyticsQuery, SearchAnalyticsResult,
   SitemapsListResult, WmxSitemap, UrlInspectionResult,
@@ -48,10 +48,12 @@ export interface ClientOpts {
 
 const enc = encodeURIComponent
 
-export function makeClient(key: ServiceAccountKey, clientOpts: ClientOpts = {}) {
+export function makeClient(key: Credential, clientOpts: ClientOpts = {}) {
   const userAgent = USER_AGENT + agentUserAgentSuffix()
   const timeout = clientOpts.timeoutMs
   const scopes = clientOpts.scopes ?? DEFAULT_SCOPES
+  // User (authorized_user) credentials require a quota/billing project header.
+  const quotaProject = key.type === 'authorized_user' ? key.project_id : undefined
 
   async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
     const token = await getAccessToken(key, scopes, timeout)
@@ -64,6 +66,7 @@ export function makeClient(key: ServiceAccountKey, clientOpts: ClientOpts = {}) 
         headers: {
           Authorization: `Bearer ${token}`,
           'User-Agent': userAgent,
+          ...(quotaProject ? { 'x-goog-user-project': quotaProject } : {}),
           ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
         },
         body: body !== undefined ? JSON.stringify(body) : undefined,

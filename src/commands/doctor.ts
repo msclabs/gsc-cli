@@ -8,7 +8,7 @@ import { outputEnvelope, shouldOutputJson } from '../lib/output.js'
 import { detectAgent } from '../lib/agent.js'
 import { VERSION, CLI_NAME } from '../lib/constants.js'
 import { makeLogger } from '../lib/logger.js'
-import { loadKeyFile } from '../core/auth.js'
+import { loadCredential, credentialLabel } from '../core/auth.js'
 import { makeClient } from '../core/client.js'
 
 export function makeDoctorCommand(globalOpts: () => GlobalOpts): Command {
@@ -27,7 +27,7 @@ export function makeDoctorCommand(globalOpts: () => GlobalOpts): Command {
       let keyError: string | null = null
       if (keyFile) {
         try {
-          email = loadKeyFile(keyFile).client_email
+          email = credentialLabel(loadCredential(keyFile))
           keyValid = true
         } catch (e) {
           keyError = e instanceof Error ? e.message : String(e)
@@ -37,7 +37,7 @@ export function makeDoctorCommand(globalOpts: () => GlobalOpts): Command {
       let deep: { sites_reachable: boolean; site_count?: number; error?: string } | null = null
       if (opts.deep && keyValid && keyFile) {
         try {
-          const sites = await makeClient(loadKeyFile(keyFile), { timeoutMs: g.timeout }).listSites()
+          const sites = await makeClient(loadCredential(keyFile), { timeoutMs: g.timeout }).listSites()
           deep = { sites_reachable: true, site_count: sites.length }
         } catch (e) {
           deep = { sites_reachable: false, error: e instanceof Error ? e.message : String(e) }

@@ -4,7 +4,7 @@ import { getActiveProfile, resolveKeyFile, resolveSite, getKeyFileSource } from 
 import type { GlobalOpts } from '../lib/config.js'
 import { outputEnvelope, shouldOutputJson } from '../lib/output.js'
 import { detectAgent } from '../lib/agent.js'
-import { loadKeyFile } from '../core/auth.js'
+import { loadCredential, credentialLabel } from '../core/auth.js'
 import { DEFAULT_SCOPES } from '../lib/constants.js'
 
 export function makeWhoamiCommand(globalOpts: () => GlobalOpts): Command {
@@ -19,12 +19,14 @@ export function makeWhoamiCommand(globalOpts: () => GlobalOpts): Command {
 
       let email: string | null = null
       let project: string | null = null
+      let authType: string | null = null
       let keyOk = false
       if (keyFile) {
         try {
-          const key = loadKeyFile(keyFile)
-          email = key.client_email
+          const key = loadCredential(keyFile)
+          email = credentialLabel(key)
           project = key.project_id ?? null
+          authType = key.type
           keyOk = true
         } catch { /* unreadable / invalid */ }
       }
@@ -34,7 +36,8 @@ export function makeWhoamiCommand(globalOpts: () => GlobalOpts): Command {
         profile,
         key_source: keyFile ? getKeyFileSource(opts) : null,
         key_file: keyFile,
-        service_account: email,
+        auth_type: authType,
+        identity: email,
         project_id: project,
         default_site: site,
         scopes: DEFAULT_SCOPES,
@@ -47,7 +50,8 @@ export function makeWhoamiCommand(globalOpts: () => GlobalOpts): Command {
         process.stdout.write(
           `${pc.bold('Profile')}:  ${profile}\n` +
           `${pc.bold('Authed')}:   ${data.authenticated ? pc.green('yes') : pc.red('no')}\n` +
-          `${pc.bold('Account')}:  ${email ?? pc.dim('(none)')}\n` +
+          `${pc.bold('Type')}:     ${authType ?? pc.dim('(none)')}\n` +
+          `${pc.bold('Identity')}: ${email ?? pc.dim('(none)')}\n` +
           `${pc.bold('Project')}:  ${project ?? pc.dim('(none)')}\n` +
           `${pc.bold('Site')}:     ${site ?? pc.dim('(none — pass --site)')}\n` +
           `${pc.bold('Source')}:   ${data.key_source ?? pc.dim('(none)')}\n` +

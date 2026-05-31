@@ -20,7 +20,8 @@ export function makeLoginCommand(globalOpts: () => GlobalOpts): Command {
     .action(async (opts) => {
       const g = globalOpts()
       const agent = detectAgent()
-      let keyFile = opts.keyFile
+      // --key-file exists both globally and on this subcommand; accept either.
+      let keyFile = opts.keyFile ?? g.keyFile
 
       // Refuse interactive prompt under an agent — Stripe pattern.
       if (!keyFile && agent) {

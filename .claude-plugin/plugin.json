@@ -1,0 +1,12 @@
+{
+  "name": "gsc",
+  "description": "Google Search Console CLI. Query search performance (keywords, pages, what to improve), audit index coverage, inspect URLs for errors, manage sitemaps, and request indexing — all agent-ready with JSON-on-pipe, NDJSON streaming, and an MCP co-binary. Auth via Google service account.",
+  "version": "0.1.0",
+  "author": { "name": "Abdul Moiz" },
+  "homepage": "https://github.com/msclabs/gsc-cli",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/msclabs/gsc-cli.git"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Bundle size check (CLI < 500 KB)
+        run: |
+          SIZE=$(stat -c %s dist/cli.cjs)
+          echo "CLI bundle: $SIZE bytes"
+          test "$SIZE" -lt 512000
+
+      - name: Bundle size check (MCP < 800 KB)
+        run: |
+          SIZE=$(stat -c %s dist/mcp.cjs)
+          echo "MCP bundle: $SIZE bytes"
+          test "$SIZE" -lt 819200
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Smoke tests
+        run: bash scripts/smoke.sh

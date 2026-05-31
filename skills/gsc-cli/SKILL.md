@@ -84,7 +84,7 @@ Envelope: `{version, status, command, data, metadata, error?}`.
 
 ## Gotchas
 
-- **`index publish` won't work on OAuth/ADC creds** — the Web Search Indexing API enforces an *owner* check that requires a service account. Everything else (perf, inspect, coverage, sitemaps) works fine on OAuth.
+- **`index publish` works on OAuth/ADC creds** as long as the authenticated user is a *verified owner* of the property and the `indexing` scope was granted (Moiz's setup qualifies — confirmed accepting publishes for selvo.co). But the Indexing API is *officially* only for `JobPosting`/`BroadcastEvent` pages: Google **accepts** publishes for any URL yet **may ignore** them for normal marketing/blog pages. `index status` (getMetadata) often returns NOT_FOUND right after a publish — that's expected (metadata lags / isn't retained for general pages), not a failure. For reliable recrawl of normal pages, use `sitemaps submit` + edit-the-page, not `index publish`.
 - **Google SA bug:** newly-created service accounts are rejected in the Search Console add-user UI ("email not found", ack'd 2026-05). That's why auth is OAuth-as-owner via gcloud ADC. Don't waste time re-adding a service account until Google fixes it.
 - **CTR is a percentage** (0-100) in output, not a 0-1 fraction.
 - **No bulk coverage API** — `coverage` / `inspect bulk` loop URL Inspection one-by-one (2,000/day/property cap). Use `--throttle` / `--max`.

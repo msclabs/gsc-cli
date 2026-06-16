@@ -7,6 +7,8 @@ import { loadCredential, credentialLabel } from '../core/auth.js'
 import { makeClient, type GscClient } from '../core/client.js'
 import { ENV_PREFIX } from '../lib/constants.js'
 import { parseFilters, resolveDateRange, flattenRows, normalizeSiteUrl } from '../lib/gsc.js'
+import { makeIndexNowClient, hostFromSite, MAX_URLS_PER_REQUEST } from '../core/indexnow.js'
+import { resolveKey, resolveKeyLocation } from '../lib/indexnow-config.js'
 import type { Dimension, SearchType } from '../core/types.js'
 
 export interface ToolDef<Shape extends z.ZodRawShape = z.ZodRawShape> {
@@ -155,6 +157,45 @@ export const indexPublishTool: ToolDef<{ url: z.ZodString; type: z.ZodOptional<z
   },
 }
 
+export const indexNowSubmitTool: ToolDef<{
+  urls: z.ZodArray<z.ZodString>
+  host: z.ZodOptional<z.ZodString>
+  key: z.ZodOptional<z.ZodString>
+}> = {
+  name: 'indexnow_submit',
+  title: 'Submit URLs to IndexNow',
+  description: 'Instant-index URLs via IndexNow (Bing, Yandex, Naver, Seznam, Yep — NOT Google). Needs a key stored for the host (or GSC_INDEXNOW_KEY).',
+  inputSchema: {
+    urls: z.array(z.string()).min(1).describe('http(s) URLs to submit'),
+    host: z.string().optional().describe('bare host; falls back to GSC_SITE'),
+    key: z.string().optional().describe('override stored/env key'),
+  },
+  async handler(args) {
+    const siteVal = resolveSite({}, args.host)
+    const host = args.host ? hostFromSite(args.host) : (siteVal ? hostFromSite(siteVal) : null)
+    if (!host) return buildEnvelope({ status: 'error', command: 'indexnow submit', error: { code: 'VALIDATION', message: 'No host. Pass `host`, or set GSC_SITE.' } })
+    const key = resolveKey(host, args.key)
+    if (!key) return buildEnvelope({ status: 'error', command: 'indexnow submit', error: { code: 'AUTH_MISSING', message: `No IndexNow key for ${host}.`, hint: `Run: gsc indexnow key set --host ${host}` } })
+    const urls = [...new Set(args.urls)].filter((u) => /^https?:\/\//i.test(u))
+    if (urls.length === 0) return buildEnvelope({ status: 'error', command: 'indexnow submit', error: { code: 'VALIDATION', message: 'No valid http(s) URLs.' } })
+    const keyLocation = resolveKeyLocation(host, key)
+    const client = makeIndexNowClient()
+    try {
+      if (urls.length === 1) {
+        const r = await client.submitOne(urls[0]!, key, keyLocation)
+        return buildEnvelope({ status: 'success', command: 'indexnow submit', data: { host, submitted: 1, http_status: r.status } })
+      }
+      let submitted = 0
+      for (let i = 0; i < urls.length; i += MAX_URLS_PER_REQUEST) {
+        const batch = urls.slice(i, i + MAX_URLS_PER_REQUEST)
+        await client.submitBatch(host, batch, key, keyLocation)
+        submitted += batch.length
+      }
+      return buildEnvelope({ status: 'success', command: 'indexnow submit', data: { host, submitted } })
+    } catch (e) { return fail('indexnow submit', e) }
+  },
+}
+
 export const whoamiTool: ToolDef<Record<string, never>> = {
   name: 'whoami',
   title: 'Auth status',
@@ -170,5 +211,5 @@ export const whoamiTool: ToolDef<Record<string, never>> = {
 
 export const ALL_TOOLS = [
   sitesListTool, searchAnalyticsTool, urlInspectTool, sitemapsListTool,
-  sitemapSubmitTool, indexPublishTool, whoamiTool,
+  sitemapSubmitTool, indexPublishTool, indexNowSubmitTool, whoamiTool,
 ] as const

@@ -1,6 +1,6 @@
 {
   "name": "@msclabs/gsc-cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Google Search Console CLI — performance, coverage, URL inspection, sitemaps, and indexing. Agent-ready (JSON-on-pipe, NDJSON) with an `mcp serve` co-binary.",
   "type": "module",
   "bin": {

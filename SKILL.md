@@ -1,6 +1,6 @@
 ---
 name: gsc
-description: "Google Search Console CLI. Use when an agent needs search performance data (keywords/pages ranking, what to improve), index-coverage audits, per-URL inspection (errors, canonicals, indexing state), sitemap management, or to request indexing. Every command supports --json (auto-true on pipe), --format csv|ndjson|markdown, --raw. Auth via Google service account."
+description: "Google Search Console CLI. Use when an agent needs search performance data (keywords/pages ranking, what to improve), index-coverage audits, per-URL inspection (errors, canonicals, indexing state), sitemap management, to request indexing (Google), or to instant-index via IndexNow (Bing/Yandex/Naver/Seznam/Yep). Every command supports --json (auto-true on pipe), --format csv|ndjson|markdown, --raw. Auth via Google service account (IndexNow needs no auth — just a hosted key file)."
 ---
 
 # gsc — Google Search Console CLI
@@ -11,7 +11,8 @@ description: "Google Search Console CLI. Use when an agent needs search performa
 - "Is this page indexed? Any errors?" → `gsc inspect <url>`
 - "Audit coverage across the site" → `gsc coverage --from-sitemap <url>`
 - "Manage / submit sitemaps" → `gsc sitemaps list|submit`
-- "Request (re)indexing" → `gsc index publish <url>`
+- "Request (re)indexing on Google" → `gsc index publish <url>`
+- "Instant-index on Bing/Yandex/etc (not Google)" → `gsc indexnow submit <url>`
 
 ## Auth (service account)
 1. Google Cloud: enable **Google Search Console API** (+ **Web Search Indexing API** for `index *`).
@@ -35,6 +36,17 @@ description: "Google Search Console CLI. Use when an agent needs search performa
 - `gsc sitemaps list` · `gsc sitemaps submit https://example.com/sitemap.xml`
 - `gsc index publish https://example.com/page` · `gsc index status <url>`
 - `gsc mcp serve` — run as stdio MCP server
+
+## IndexNow (Bing, Yandex, Naver, Seznam, Yep — NOT Google)
+IndexNow is the non-Google instant-index channel. No OAuth: ownership is proven by hosting a `{key}.txt` file at the domain root. One submit fans out to every participating engine via `api.indexnow.org`. For Google, use `gsc index` / `gsc sitemaps` — Google never adopted IndexNow.
+- `gsc indexnow key generate` — print a fresh 32-hex key
+- `gsc indexnow key set --host example.com` — store a key (generates if `--key` omitted); prints the file + URL you must host
+- `gsc indexnow key verify --host example.com` — fetch the hosted file and confirm it matches
+- `gsc indexnow submit <url...> --host example.com` — 1 URL = GET, many = batched POST (≤10k/request)
+- `gsc indexnow submit --from-sitemap https://example.com/sitemap.xml` — submit every `<loc>` (also `--urls <file>`, `--from-stdin`)
+- `gsc indexnow engines` — list participating engines
+- Key resolution: `--key` > `GSC_INDEXNOW_KEY` > stored host key (`~/.config/gsc/indexnow.json`). Host derives from `--host` or the `--site`/default-site chain.
+- No "did it index?" status API exists in IndexNow — submit returns only whether the ping was accepted (HTTP 200/202). For real index status, use `gsc inspect` (Google).
 
 ## Filters & dates
 - `--filter key=val` (equals) · `key!=val` · `key~regex` (include) · `key!~regex` (exclude). Repeatable = AND. Dimensions: country, device, page, query, searchAppearance.

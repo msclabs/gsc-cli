@@ -18,6 +18,7 @@ import { makeInspectCommand } from './commands/inspect.js'
 import { makeCoverageCommand } from './commands/coverage.js'
 import { makeSitemapsCommand } from './commands/sitemaps.js'
 import { makeIndexCommand } from './commands/index-cmd.js'
+import { makeIndexNowCommand } from './commands/indexnow.js'
 
 // --help --json — capability manifest for agent self-discovery.
 if (process.argv.includes('--help') && process.argv.includes('--json')) {
@@ -66,6 +67,7 @@ program.addCommand(makeInspectCommand(globalOpts))
 program.addCommand(makeCoverageCommand(globalOpts))
 program.addCommand(makeSitemapsCommand(globalOpts))
 program.addCommand(makeIndexCommand(globalOpts))
+program.addCommand(makeIndexNowCommand(globalOpts))
 
 if (process.argv.length <= 2) {
   if (isInteractive()) process.stderr.write(banner())
@@ -93,7 +95,8 @@ function buildManifest() {
       { name: 'inspect', description: 'URL index status / coverage / errors (single or bulk)' },
       { name: 'coverage', description: 'Index-coverage audit over top pages / sitemap' },
       { name: 'sitemaps', description: 'list | get | submit | delete' },
-      { name: 'index', description: 'publish | publish-batch | status — Web Search Indexing API' },
+      { name: 'index', description: 'publish | publish-batch | status — Web Search Indexing API (Google)' },
+      { name: 'indexnow', description: 'submit | key | engines — instant-index via IndexNow (Bing/Yandex/Naver/Seznam/Yep)' },
     ],
     globalOptions: [
       '--json', '--raw', '--format', '--compact', '--quiet', '--verbose',
@@ -105,6 +108,7 @@ function buildManifest() {
       { name: 'GOOGLE_APPLICATION_CREDENTIALS', description: 'Service-account JSON key path (standard Google var)' },
       { name: `${ENV_PREFIX}_SITE`, description: 'Default property (siteUrl)' },
       { name: `${ENV_PREFIX}_PROFILE`, description: 'Credential profile' },
+      { name: `${ENV_PREFIX}_INDEXNOW_KEY`, description: 'IndexNow key (overrides stored host key)' },
       { name: `${ENV_PREFIX}_JSON`, description: 'Set to 1 to force JSON output' },
       { name: 'NO_COLOR', description: 'Disable ANSI color' },
       { name: 'CI', description: 'Force non-interactive mode' },

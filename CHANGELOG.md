@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] — 2026-06-17
+
+### Added
+- **IndexNow:** `indexnow submit|key|engines` — instant-index URLs on the non-Google engines (Bing, Yandex, Naver, Seznam, Yep). One submit fans out to all via `api.indexnow.org`.
+  - `indexnow key generate|set|show|verify` — host-scoped keys in `~/.config/gsc/indexnow.json`; `set` prints the `{key}.txt` file + URL to host; `verify` fetches it and confirms the match.
+  - `indexnow submit` — single URL via GET, many via batched POST (≤10k/request). Sources: args, `--urls <file>`, `--from-sitemap <url>` (parses `<loc>`), `--from-stdin`. Dedups + filters to http(s). `--dry-run=client` previews.
+  - Host derives from `--host` or the `--site`/default-site chain; key from `--key` > `GSC_INDEXNOW_KEY` > stored.
+  - No auth (ownership = hosted key file). No status API — submit reports only ping acceptance (HTTP 200/202).
+- **MCP:** added `indexnow_submit` tool (8 tools total).
+
 ## [0.1.0] — 2026-05-31
 
 ### Added

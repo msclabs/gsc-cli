@@ -45,7 +45,21 @@ npm install && npm run build
 | `inspect --urls/--from-sitemap/--from-perf` | Bulk inspection (throttled, quota-capped) |
 | `coverage` | Index-coverage audit — indexed vs. excluded + reason |
 | `sitemaps list \| get \| submit \| delete` | Manage sitemaps |
-| `index publish \| publish-batch \| status` | Web Search Indexing API |
+| `index publish \| publish-batch \| status` | Web Search Indexing API (Google) |
+| `indexnow submit \| key \| engines` | Instant-index via IndexNow (Bing/Yandex/Naver/Seznam/Yep — not Google) |
+
+## IndexNow
+
+The non-Google instant-index channel. No OAuth — prove ownership by hosting a `{key}.txt` file at the domain root; one submit fans out to all participating engines via `api.indexnow.org`.
+
+```bash
+gsc indexnow key set --host example.com          # store a key, prints the file + URL to host
+gsc indexnow key verify --host example.com       # confirm the hosted file matches
+gsc indexnow submit https://example.com/page --host example.com
+gsc indexnow submit --from-sitemap https://example.com/sitemap.xml --host example.com
+```
+
+Key resolution: `--key` > `GSC_INDEXNOW_KEY` > stored host key (`~/.config/gsc/indexnow.json`). Host derives from `--host` or `--site`. IndexNow has no index-status API — submit reports only ping acceptance; for real status use `gsc inspect` (Google).
 
 ## Filters & dates
 
@@ -62,6 +76,7 @@ npm install && npm run build
 - `GSC_KEY_FILE` / `GOOGLE_APPLICATION_CREDENTIALS` — service-account JSON key path
 - `GSC_SITE` — default property (`sc-domain:example.com` or `https://example.com/`)
 - `GSC_PROFILE` — credential profile · `GSC_JSON=1` — force JSON · `NO_COLOR` · `CI`
+- `GSC_INDEXNOW_KEY` — IndexNow key (overrides the stored host key)
 
 ## Quotas (enforced/warned)
 

@@ -25,7 +25,7 @@ $CLI --version >/dev/null && pass "--version prints" || fail "--version failed"
 
 section "Scenario: --help --json (capability manifest)"
 $CLI --help --json | jq -e '.cli.name == "gsc"' >/dev/null && pass "manifest cli.name=gsc" || fail "manifest invalid"
-$CLI --help --json | jq -e '.commands | length == 12' >/dev/null && pass "12 commands" || fail "command count off"
+$CLI --help --json | jq -e '.commands | length == 13' >/dev/null && pass "13 commands" || fail "command count off"
 $CLI --help --json | jq -e '.exitCodes | length == 9' >/dev/null && pass "9 exit codes" || fail "exit codes missing"
 
 section "Scenario: doctor --json (offline)"
@@ -85,6 +85,18 @@ jq . /tmp/gsc_out.json >/dev/null && pass "stdout parses clean at --verbose" || 
 section "Scenario: config chain wiring"
 $CLI doctor --json | jq -e '.data.project_config.keys | type == "array"' >/dev/null \
   && pass "project_config key walk present" || fail "loadConfigChain not wired"
+
+section "Scenario: indexnow (no auth, offline)"
+$CLI indexnow engines --json | jq -e '.data.engines | length == 5' >/dev/null && pass "5 IndexNow engines" || fail "engines count off"
+$CLI indexnow key generate --json | jq -e '.data.key | test("^[a-f0-9]{32}$")' >/dev/null && pass "key generate is 32 hex" || fail "key generate invalid"
+$CLI indexnow submit https://x.test/a https://x.test/b --host x.test --key abcd1234ef56 --dry-run --json \
+  | jq -e '.data.would_submit == 2' >/dev/null && pass "submit dry-run gathers + previews" || fail "submit dry-run broken"
+set +e
+env -u GSC_INDEXNOW_KEY $CLI indexnow submit https://x.test/a --host x.test --json >/dev/null 2>&1
+[ "$?" -eq 4 ] && pass "submit needs a key (exit 4)" || fail "missing-key guard broken"
+$CLI indexnow submit --host x.test --key abcd1234ef56 --json >/dev/null 2>&1
+[ "$?" -eq 3 ] && pass "submit needs URLs (exit 3)" || fail "no-url guard broken"
+set -e
 
 echo
 if [ "$FAIL" -eq 0 ]; then

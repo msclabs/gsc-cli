@@ -6,8 +6,8 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-CLI="node dist/cli.cjs"
-MCP="node dist/mcp.cjs"
+CLI="./bin/gsc"
+MCP="./bin/gsc-mcp"
 FAIL=0
 
 fail()  { echo "  ✗ $*" >&2; FAIL=$((FAIL+1)); }

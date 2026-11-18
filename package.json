@@ -4,8 +4,8 @@
   "description": "Google Search Console CLI — performance, coverage, URL inspection, sitemaps, and indexing. Agent-ready (JSON-on-pipe, NDJSON) with an `mcp serve` co-binary.",
   "type": "module",
   "bin": {
-    "gsc": "./dist/cli.cjs",
-    "gsc-mcp": "./dist/mcp.cjs"
+    "gsc": "./bin/gsc",
+    "gsc-mcp": "./bin/gsc-mcp"
   },
   "files": [
     "dist/cli.cjs",
